@@ -1,0 +1,399 @@
+---
+title: "TAREA 4"
+author: "Arturo S."
+date: "2024-10-03"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(reticulate)
+# Carga de funciones de Yahoo desde GitHub:
+source("https://raw.githubusercontent.com/OscarVDelatorreTorres/yahooFinance/main/datosMultiplesYahooFinance.R")
+
+
+source("https://raw.githubusercontent.com/OscarVDelatorreTorres/riskManagementSuiteR/main/rollGARCH.R")
+source("https://raw.githubusercontent.com/OscarVDelatorreTorres/riskManagementSuiteR/main/rollEWSigma.R")
+
+```
+
+Descarga de historial diario y semanal
+
+```{r}
+tickerV=c("AC","ALSEA.MX","ALFAA.MX","BBAJIOO.MX","BIMBOA.MX","CEMEXCPO.MX","CHDRAUIB.MX","FUNO11.MX","GENTERA.MX","GMEXICOB.MX","GFINBURO.MX","GFNORTEO.MX","GMXT.MX","GRUMAB.MX","KIMBERA.MX","LACOMERUBC.MX","PINFRA.MX","SORIANAB.MX","WALMEX.MX")
+deD=Sys.Date()-(360*3)
+hastaD=Sys.Date()
+per="D"
+paridadFX="USDMXN=X"
+
+Datos_diarios=historico_multiples_precios(tickers=tickerV,de=deD,hasta = hastaD,periodicidad = per, fxRate=paridadFX)
+
+per="W"
+Datos_semanales=historico_multiples_precios(tickers=tickerV,de=deD,hasta = hastaD,periodicidad = per, fxRate=paridadFX)
+```
+# FRECUENCIA DIARIA
+
+VACIADO DE TABLAS
+
+```{r}
+RENDIMIENTOS=Datos_diarios
+
+AC= RENDIMIENTOS$AC
+ALSEA= RENDIMIENTOS$ALSEA
+ALFA= RENDIMIENTOS$ALFA
+BBAJIOO= RENDIMIENTOS$BBAJIOO
+BIMBOA= RENDIMIENTOS$BIMBOA
+CEMEX= RENDIMIENTOS$CEMEX
+CHEDRAUI=RENDIMIENTOS$CHDRAUIB
+FUNO11=RENDIMIENTOS$FUNO11
+GENTERA=RENDIMIENTOS$GENTERA
+GMEXICOB=RENDIMIENTOS$GMEXICOB
+GFINBURO=RENDIMIENTOS$GFINBURO
+GFNORTEO=RENDIMIENTOS$GFNORTEO
+GMXT=RENDIMIENTOS$GMXT
+GRUMAB=RENDIMIENTOS$GRUMAB
+KIMBERA=RENDIMIENTOS$KIMBERA
+LACOMERUBC=RENDIMIENTOS$LACOMERUBC
+PINFRA=RENDIMIENTOS$PINFRA
+SORIANA=RENDIMIENTOS$SORIANA
+WALMEX=RENDIMIENTOS$WALMEX
+```
+
+### SUAVIZAMIENTO EXPONENCIAL 0.95
+
+```{r}
+# Lambda con el valor deseado:
+lambdaS=0.95
+
+EMPRESAS=list(AC,ALFA,ALSEA,BBAJIOO,BIMBOA,CEMEX,CHEDRAUI,FUNO11,GENTERA,GMEXICOB,GMXT,GFINBURO,GFNORTEO,GRUMAB,KIMBERA,LACOMERUBC,PINFRA,SORIANA,WALMEX)
+
+for (i in EMPRESAS){
+  seqT=seq(from=nrow(i),to=1,by=-1)-1
+  lambdaT=lambdaS^seqT
+
+  # Se multiplica la lambda suavizada exponencialmente a lo largo de t por los rendimientos al cuadrado:
+
+  rendimientosCuadraticos=(i$rCont^2)*lambdaT
+  rendimientosSuavizados=rendimientosCuadraticos*lambdaT
+  # Se crea la tabla de salida:
+
+  tablaSuavizamientoExponencial=data.frame(Fecha=i$date,lambda=lambdaT,rendimientosCuadraticos=rendimientosCuadraticos, rendimientosSuavizados=rendimientosSuavizados)
+
+  datatable(tablaSuavizamientoExponencial,colnames=c("Fecha","Lambda en t-n","Rendimientos cuadráticos","Rendimientos cuadráticos suavizados"), 
+    #extensions = 'Buttons', options = list(
+    #dom = 'Bfrtip',
+    #buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+    #scrollX = F)
+  )
+  
+
+# Se calcula la desviación estándar con suavizamiento exponencial:
+
+sigmaExponencial=sqrt((1-lambdaS)*sum(rendimientosSuavizados))
+
+tablaSigmas=data.frame(sigmaConvencional=sd(i$rCont[2:length(i$rCont)]),sigmaExponencial=sigmaIPCExponencial)
+datatable(tablaSigmas)
+}
+```
+
+### SUAVIZAMIENTO EXPONENCIAL 0.98
+
+```{r}
+# Lambda con el valor deseado:
+lambdaS=0.98
+
+EMPRESAS=list(AC,ALFA,ALSEA,BBAJIOO,BIMBOA,CEMEX,CHEDRAUI,FUNO11,GENTERA,GMEXICOB,GMXT,GFINBURO,GFNORTEO,GRUMAB,KIMBERA,LACOMERUBC,PINFRA,SORIANA,WALMEX)
+
+for (i in EMPRESAS){
+  seqT=seq(from=nrow(i),to=1,by=-1)-1
+  lambdaT=lambdaS^seqT
+
+  # Se multiplica la lambda suavizada exponencialmente a lo largo de t por los rendimientos al cuadrado:
+
+  rendimientosCuadraticos=(i$rCont^2)*lambdaT
+  rendimientosSuavizados=rendimientosCuadraticos*lambdaT
+  # Se crea la tabla de salida:
+
+  tablaSuavizamientoExponencial=data.frame(Fecha=i$date,lambda=lambdaT,rendimientosCuadraticos=rendimientosCuadraticos, rendimientosSuavizados=rendimientosSuavizados)
+
+  datatable(tablaSuavizamientoExponencial,colnames=c("Fecha","Lambda en t-n","Rendimientos cuadráticos","Rendimientos cuadráticos suavizados"), 
+    #extensions = 'Buttons', options = list(
+    #dom = 'Bfrtip',
+    #buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+    #scrollX = F)
+  )
+  
+
+# Se calcula la desviación estándar con suavizamiento exponencial:
+
+sigmaExponencial=sqrt((1-lambdaS)*sum(rendimientosSuavizados))
+
+tablaSigmas=data.frame(sigmaConvencional=sd(i$rCont[2:length(i$rCont)]),sigmaExponencial=sigmaIPCExponencial)
+datatable(tablaSigmas)
+}
+```
+
+### GARCH (-1,1) Normal
+
+```{r}
+library(zoo)
+
+source("https://raw.githubusercontent.com/OscarVDelatorreTorres/riskManagementSuiteR/main/rollGARCH.R")
+
+
+ventana <- 250  # Tamaño de la ventana móvil (250 días)
+
+for (i in EMPRESAS){
+
+  # Se calcula el valor de la volatilidad con suavizamiento            exponencial de:
+  sigmasTIPC=rollapply(i$rCont, width = ventana, FUN = sd, fill = NA, align = "right")
+
+  # Se imprimen los valores de las filas 1 a 10, 249 a 255 y las       últimas 10 filas del vector sigmasTIPC previamente estimado:
+  sigmasTIPC[c(1:10,249:255,tail(sigmasTIPC,10))]
+  
+  # Calcular la desviación estándar móvil
+
+  sigmasGARCHTIPC=rollGARCH(i$rCont,model="sGARCH",LLF="norm",garchOrder =c(1,1),arma=c(0,0),ventana=ventana,include.mean = FALSE)
+
+  # Se imprimen los valores de las filas 1 a 10, 249 a 255 y las       últimas 10 filas del vector sigmasGARCHTIPC previamente estimado:
+  sigmasGARCHTIPC[c(1:10,249:255,tail(sigmasTIPC,10))]
+}
+```
+
+### GARCH (-1,1) t-Student
+
+```{r}
+library(zoo)
+
+source("https://raw.githubusercontent.com/OscarVDelatorreTorres/riskManagementSuiteR/main/rollGARCH.R")
+
+
+ventana <- 250  # Tamaño de la ventana móvil (250 días)
+
+for (i in EMPRESAS){
+
+  # Se calcula el valor de la volatilidad con suavizamiento            exponencial de:
+  sigmasTIPC=rollapply(i$rCont, width = ventana, FUN = sd, fill = NA, align = "right")
+
+  # Se imprimen los valores de las filas 1 a 10, 249 a 255 y las       últimas 10 filas del vector sigmasTIPC previamente estimado:
+  sigmasTIPC[c(1:10,249:255,tail(sigmasTIPC,10))]
+  
+  # Calcular la desviación estándar móvil
+
+  sigmasGARCHTIPC=rollGARCH(i$rCont,model="sGARCH",LLF="std",garchOrder =c(1,1),arma=c(0,0),ventana=ventana,include.mean = FALSE)
+
+  # Se imprimen los valores de las filas 1 a 10, 249 a 255 y las       últimas 10 filas del vector sigmasGARCHTIPC previamente estimado:
+  sigmasGARCHTIPC[c(1:10,249:255,tail(sigmasTIPC,10))]
+}
+```
+
+### GARCH (-1,1) GED
+
+```{r}
+library(zoo)
+
+source("https://raw.githubusercontent.com/OscarVDelatorreTorres/riskManagementSuiteR/main/rollGARCH.R")
+
+
+ventana <- 250  # Tamaño de la ventana móvil (250 días)
+
+for (i in EMPRESAS){
+
+  # Se calcula el valor de la volatilidad con suavizamiento            exponencial de:
+  sigmasTIPC=rollapply(i$rCont, width = ventana, FUN = sd, fill = NA, align = "right")
+
+  # Se imprimen los valores de las filas 1 a 10, 249 a 255 y las       últimas 10 filas del vector sigmasTIPC previamente estimado:
+  sigmasTIPC[c(1:10,249:255,tail(sigmasTIPC,10))]
+  
+  # Calcular la desviación estándar móvil
+
+  sigmasGARCHTIPC=rollGARCH(i$rCont,model="sGARCH",LLF="ged",garchOrder =c(1,1),arma=c(0,0),ventana=ventana,include.mean = FALSE)
+
+  # Se imprimen los valores de las filas 1 a 10, 249 a 255 y las       últimas 10 filas del vector sigmasGARCHTIPC previamente estimado:
+  sigmasGARCHTIPC[c(1:10,249:255,tail(sigmasTIPC,10))]
+}
+```
+
+# FRECUENCIA SEMANAL
+
+VACIADO DE TABLAS
+
+```{r}
+RENDIMIENTOS=Datos_semanales
+
+AC= RENDIMIENTOS$AC
+ALSEA= RENDIMIENTOS$ALSEA
+ALFA= RENDIMIENTOS$ALFA
+BBAJIOO= RENDIMIENTOS$BBAJIOO
+BIMBOA= RENDIMIENTOS$BIMBOA
+CEMEX= RENDIMIENTOS$CEMEX
+CHEDRAUI=RENDIMIENTOS$CHDRAUIB
+FUNO11=RENDIMIENTOS$FUNO11
+GENTERA=RENDIMIENTOS$GENTERA
+GMEXICOB=RENDIMIENTOS$GMEXICOB
+GFINBURO=RENDIMIENTOS$GFINBURO
+GFNORTEO=RENDIMIENTOS$GFNORTEO
+GMXT=RENDIMIENTOS$GMXT
+GRUMAB=RENDIMIENTOS$GRUMAB
+KIMBERA=RENDIMIENTOS$KIMBERA
+LACOMERUBC=RENDIMIENTOS$LACOMERUBC
+PINFRA=RENDIMIENTOS$PINFRA
+SORIANA=RENDIMIENTOS$SORIANA
+WALMEX=RENDIMIENTOS$WALMEX
+```
+
+### SUAVIZAMIENTO EXPONENCIAL 0.95
+
+```{r}
+# Lambda con el valor deseado:
+lambdaS=0.95
+
+EMPRESAS=list(AC,ALFA,ALSEA,BBAJIOO,BIMBOA,CEMEX,CHEDRAUI,FUNO11,GENTERA,GMEXICOB,GMXT,GFINBURO,GFNORTEO,GRUMAB,KIMBERA,LACOMERUBC,PINFRA,SORIANA,WALMEX)
+
+for (i in EMPRESAS){
+  seqT=seq(from=nrow(i),to=1,by=-1)-1
+  lambdaT=lambdaS^seqT
+
+  # Se multiplica la lambda suavizada exponencialmente a lo largo de t por los rendimientos al cuadrado:
+
+  rendimientosCuadraticos=(i$rCont^2)*lambdaT
+  rendimientosSuavizados=rendimientosCuadraticos*lambdaT
+  # Se crea la tabla de salida:
+
+  tablaSuavizamientoExponencial=data.frame(Fecha=i$date,lambda=lambdaT,rendimientosCuadraticos=rendimientosCuadraticos, rendimientosSuavizados=rendimientosSuavizados)
+
+  datatable(tablaSuavizamientoExponencial,colnames=c("Fecha","Lambda en t-n","Rendimientos cuadráticos","Rendimientos cuadráticos suavizados"), 
+    #extensions = 'Buttons', options = list(
+    #dom = 'Bfrtip',
+    #buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+    #scrollX = F)
+  )
+  
+
+# Se calcula la desviación estándar con suavizamiento exponencial:
+
+sigmaExponencial=sqrt((1-lambdaS)*sum(rendimientosSuavizados))
+
+tablaSigmas=data.frame(sigmaConvencional=sd(i$rCont[2:length(i$rCont)]),sigmaExponencial=sigmaIPCExponencial)
+datatable(tablaSigmas)
+}
+```
+
+### SUAVIZAMIENTO EXPONENCIAL 0.98
+
+```{r}
+# Lambda con el valor deseado:
+lambdaS=0.98
+
+EMPRESAS=list(AC,ALFA,ALSEA,BBAJIOO,BIMBOA,CEMEX,CHEDRAUI,FUNO11,GENTERA,GMEXICOB,GMXT,GFINBURO,GFNORTEO,GRUMAB,KIMBERA,LACOMERUBC,PINFRA,SORIANA,WALMEX)
+
+for (i in EMPRESAS){
+  seqT=seq(from=nrow(i),to=1,by=-1)-1
+  lambdaT=lambdaS^seqT
+
+  # Se multiplica la lambda suavizada exponencialmente a lo largo de t por los rendimientos al cuadrado:
+
+  rendimientosCuadraticos=(i$rCont^2)*lambdaT
+  rendimientosSuavizados=rendimientosCuadraticos*lambdaT
+  # Se crea la tabla de salida:
+
+  tablaSuavizamientoExponencial=data.frame(Fecha=i$date,lambda=lambdaT,rendimientosCuadraticos=rendimientosCuadraticos, rendimientosSuavizados=rendimientosSuavizados)
+
+  datatable(tablaSuavizamientoExponencial,colnames=c("Fecha","Lambda en t-n","Rendimientos cuadráticos","Rendimientos cuadráticos suavizados"), 
+    #extensions = 'Buttons', options = list(
+    #dom = 'Bfrtip',
+    #buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+    #scrollX = F)
+  )
+  
+
+# Se calcula la desviación estándar con suavizamiento exponencial:
+
+sigmaExponencial=sqrt((1-lambdaS)*sum(rendimientosSuavizados))
+
+tablaSigmas=data.frame(sigmaConvencional=sd(i$rCont[2:length(i$rCont)]),sigmaExponencial=sigmaIPCExponencial)
+datatable(tablaSigmas)
+}
+```
+
+### GARCH (-1,1) Normal
+
+```{r}
+library(zoo)
+
+source("https://raw.githubusercontent.com/OscarVDelatorreTorres/riskManagementSuiteR/main/rollGARCH.R")
+
+
+ventana <- 250  # Tamaño de la ventana móvil (250 días)
+
+for (i in EMPRESAS){
+
+  # Se calcula el valor de la volatilidad con suavizamiento            exponencial de:
+  sigmasTIPC=rollapply(i$rCont, width = ventana, FUN = sd, fill = NA, align = "right")
+
+  # Se imprimen los valores de las filas 1 a 10, 249 a 255 y las       últimas 10 filas del vector sigmasTIPC previamente estimado:
+  sigmasTIPC[c(1:10,249:255,tail(sigmasTIPC,10))]
+  
+  # Calcular la desviación estándar móvil
+
+  sigmasGARCHTIPC=rollGARCH(i$rCont,model="sGARCH",LLF="norm",garchOrder =c(1,1),arma=c(0,0),ventana=ventana,include.mean = FALSE)
+
+  # Se imprimen los valores de las filas 1 a 10, 249 a 255 y las       últimas 10 filas del vector sigmasGARCHTIPC previamente estimado:
+  sigmasGARCHTIPC[c(1:10,249:255,tail(sigmasTIPC,10))]
+}
+```
+
+### GARCH (-1,1) t-Student
+
+```{r}
+library(zoo)
+
+source("https://raw.githubusercontent.com/OscarVDelatorreTorres/riskManagementSuiteR/main/rollGARCH.R")
+
+
+ventana <- 250  # Tamaño de la ventana móvil (250 días)
+
+for (i in EMPRESAS){
+
+  # Se calcula el valor de la volatilidad con suavizamiento            exponencial de:
+  sigmasTIPC=rollapply(i$rCont, width = ventana, FUN = sd, fill = NA, align = "right")
+
+  # Se imprimen los valores de las filas 1 a 10, 249 a 255 y las       últimas 10 filas del vector sigmasTIPC previamente estimado:
+  sigmasTIPC[c(1:10,249:255,tail(sigmasTIPC,10))]
+  
+  # Calcular la desviación estándar móvil
+
+  sigmasGARCHTIPC=rollGARCH(i$rCont,model="sGARCH",LLF="std",garchOrder =c(1,1),arma=c(0,0),ventana=ventana,include.mean = FALSE)
+
+  # Se imprimen los valores de las filas 1 a 10, 249 a 255 y las       últimas 10 filas del vector sigmasGARCHTIPC previamente estimado:
+  sigmasGARCHTIPC[c(1:10,249:255,tail(sigmasTIPC,10))]
+}
+```
+
+### GARCH (-1,1) GED
+
+```{r}
+library(zoo)
+
+source("https://raw.githubusercontent.com/OscarVDelatorreTorres/riskManagementSuiteR/main/rollGARCH.R")
+
+
+ventana <- 250  # Tamaño de la ventana móvil (250 días)
+
+for (i in EMPRESAS){
+
+  # Se calcula el valor de la volatilidad con suavizamiento            exponencial de:
+  sigmasTIPC=rollapply(i$rCont, width = ventana, FUN = sd, fill = NA, align = "right")
+
+  # Se imprimen los valores de las filas 1 a 10, 249 a 255 y las       últimas 10 filas del vector sigmasTIPC previamente estimado:
+  sigmasTIPC[c(1:10,249:255,tail(sigmasTIPC,10))]
+  
+  # Calcular la desviación estándar móvil
+
+  sigmasGARCHTIPC=rollGARCH(i$rCont,model="sGARCH",LLF="ged",garchOrder =c(1,1),arma=c(0,0),ventana=ventana,include.mean = FALSE)
+
+  # Se imprimen los valores de las filas 1 a 10, 249 a 255 y las       últimas 10 filas del vector sigmasGARCHTIPC previamente estimado:
+  sigmasGARCHTIPC[c(1:10,249:255,tail(sigmasTIPC,10))]
+}
+```
+
